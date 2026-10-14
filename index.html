@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>마지날리아 · 문양 좌표 수집</title>
+<style>
+  :root{color-scheme:light;--ink:#292637;--muted:#696375;--paper:#fffefb;--bg:#f3f0e9;--line:#ddd7cc;--accent:#60408b;--soft:#eee7f6;--ok:#28664c;--warn:#8b401a}
+  *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,"Malgun Gothic",sans-serif}
+  button,input,select{font:inherit}button{cursor:pointer;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 16px;color:var(--ink);font-weight:650}
+  button:hover:not(:disabled){border-color:var(--accent);background:var(--soft)}button:disabled{cursor:default;opacity:.45}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #b5a0cd;outline-offset:3px}
+  .primary{background:var(--accent);border-color:var(--accent);color:white}.primary:hover:not(:disabled){background:#4e3275;color:white}
+  input,select{max-width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 12px;background:white;color:var(--ink)}[hidden]{display:none!important}
+  main{max-width:1280px;margin:auto;padding:24px 32px 40px}header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}
+  .eyebrow{color:var(--accent);font-size:12px;letter-spacing:.12em;font-weight:750;margin:0 0 2px}h1{font-size:25px;line-height:1.3;margin:0}h2{font-size:20px;margin:0}p{margin:8px 0}.muted{color:var(--muted)}.small{font-size:13px}
+  .toolbar,.actions,.fields{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.toolbar button{font-size:13px;padding:8px 12px}
+  .panel{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:20px}.setup{margin-bottom:16px}.fields{align-items:end;margin-top:14px}.fields label{display:grid;gap:5px;font-size:13px;font-weight:650}
+  .note{color:var(--muted);font-size:13px}.sessionbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px;flex-wrap:wrap}.sessionbar select{max-width:340px;font-size:13px}
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) 242px;gap:18px;align-items:start}.drawing-panel{padding:18px}.prompt{display:flex;align-items:center;gap:14px;margin-bottom:12px}.symbol{display:grid;place-items:center;width:60px;height:60px;flex:none;border:1px solid var(--line);border-radius:12px;font:40px/1 Georgia,serif;color:var(--accent);background:#faf7fd}
+  .prompt p{margin:3px 0 0;font-size:13px;color:var(--muted)}.canvas-shell{position:relative;border:1px solid #cfc7b9;border-radius:10px;overflow:hidden;background:#fffefa;aspect-ratio:16/9;max-height:52vh}
+  canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}.canvas-hint{position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none;color:#827b8d;font-size:15px}.canvas-hint span{font-size:12px;margin-top:6px}
+  .canvas-meta{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:12px;margin:7px 0 12px}.actions .primary{margin-left:auto}.key{font:12px system-ui;border:1px solid currentColor;border-radius:4px;padding:1px 5px;opacity:.8;margin-left:6px}
+  aside .panel{padding:16px}progress{width:100%;height:10px;accent-color:var(--accent);margin:8px 0}.total{display:flex;justify-content:space-between;align-items:baseline}.total strong{font-size:21px}.glyphs{display:grid;gap:8px;margin-top:8px}.glyph{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:6px;text-align:left;padding:10px;font-size:13px}.glyph b{font:24px/1 Georgia,serif}.glyph[aria-current="true"]{border-color:var(--accent);background:var(--soft)}.glyph.complete .count{color:var(--ok)}.count{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px}
+  .storage{border-top:1px solid var(--line);margin-top:15px;padding-top:12px;font-size:12px;overflow-wrap:anywhere}.storage strong{display:block;color:var(--ok)}.storage.error strong{color:var(--warn)}.storage p{margin:4px 0}.backup{width:100%;margin-top:8px;font-size:13px}
+  #message{min-height:24px;margin:12px 0 0;color:var(--ok);font-weight:600;font-size:13px}#message.error{color:var(--warn)}.warning{border:1px solid #dbb798;border-radius:10px;background:#fff4e9;color:var(--warn);padding:10px 14px;font-size:13px;margin:12px 0}.completion{border:1px solid #b9cfbd;background:#eef6ee;margin-bottom:14px}.completion strong{color:var(--ok)}
+  details{margin-top:20px;font-size:13px;color:var(--muted)}summary{cursor:pointer;font-weight:650;color:var(--ink)}details ul{padding-left:20px;margin-bottom:0}.footer{margin-top:18px;font-size:12px;color:var(--muted)}.form-error{color:var(--warn);font-size:13px}
+  @media(max-width:860px){main{padding:18px 16px}.layout{grid-template-columns:1fr}aside .panel{display:grid;gap:10px}.glyphs{grid-template-columns:repeat(5,1fr)}.glyph{grid-template-columns:1fr;text-align:center}.storage{margin-top:0}.canvas-shell{min-height:250px}header{align-items:start}h1{font-size:21px}}
+  @media(max-width:540px){header{display:block}.toolbar{margin-top:14px}.glyphs{grid-template-columns:repeat(3,1fr)}.actions .primary{width:100%;margin-left:0}.prompt{align-items:start}.symbol{width:48px;height:48px}.canvas-meta{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div><p class="eyebrow">MARGINALIA · DRAWING DATA</p><h1>다섯 문양, 내 손으로 수집하기</h1></div>
+    <div class="toolbar"><button id="importButton">JSON 불러와 이어하기</button><button id="newButton">새 수집</button></div>
+  </header>
+  <section class="panel setup" id="setup" aria-labelledby="setupTitle">
+    <h2 id="setupTitle">처음은 문양당 10개씩, 총 50개</h2>
+    <p class="muted">작성자 번호는 <b>성씨 영어 + 수집 회차</b>입니다. 예: Kim1, Moon1 → 같은 사람이 다시 하면 Moon2. 성씨가 겹치면 KimA1 / KimB1처럼 구분하고 계속 같은 표기를 써 주세요.</p>
+    <form id="setupForm" class="fields">
+      <label>작성자 번호<input id="participant" placeholder="예: Moon1" maxlength="24" pattern="[A-Za-z]+[1-9][0-9]*" title="성씨 영어와 1 이상의 회차 숫자: Moon1, KimA2" required autocomplete="off" spellcheck="false"></label>
+      <label>문양당 개수<input id="target" type="number" min="1" max="100" value="10" required style="width:100px"></label>
+      <label>사용 도구<select id="device"><option value="mouse">마우스</option><option value="trackpad">터치패드</option><option value="pen">펜 태블릿</option><option value="touch">터치 화면</option></select></label>
+      <button class="primary" type="submit" id="startButton">수집 시작</button><button type="button" id="cancelSetup" hidden>돌아가기</button>
+    </form>
+    <p class="note">PC에서 평소 게임에 쓰는 마우스를 권장합니다. 문양별로 편한 크기 4개 → 작게 3개 → 크게 3개를 안내합니다. 좌표를 서버로 보내지 않으며, 완료 후 JSON을 내려받아 카톡 단톡방에 파일로 보내 주세요.</p>
+    <p id="setupError" class="form-error" role="alert"></p>
+  </section>
+  <div id="startupError" class="warning" hidden></div>
+  <section id="workspace" hidden>
+    <div class="sessionbar"><div><strong id="sessionLabel"></strong> <span class="muted small" id="sessionInfo"></span></div><label class="small">이 브라우저의 수집 <select id="sessions" aria-label="보관된 수집 선택"></select></label></div>
+    <div id="completion" class="panel completion" hidden><strong>목표 개수를 모두 모았습니다.</strong><p><b>완료하고 JSON 다운로드</b>를 누른 뒤 다운로드된 .json 파일을 카톡 단톡방에 첨부해 주세요. 다운로드 폴더나 브라우저의 다운로드 목록에서 파일을 확인하세요.</p><button class="primary" id="finishExport">완료하고 JSON 다운로드</button></div>
+    <div class="layout">
+      <section class="panel drawing-panel" aria-labelledby="glyphTitle">
+        <div class="prompt"><div class="symbol" id="symbol" aria-hidden="true"></div><div><p class="eyebrow" id="sampleOrdinal"></p><h2 id="glyphTitle"></h2><p id="glyphInstruction"></p></div></div>
+        <div class="canvas-shell"><canvas id="drawing" tabindex="0" aria-label="문양 그리기 영역. 왼쪽 버튼을 누른 채 그리세요. Enter로 기록합니다."></canvas><div class="canvas-hint" id="canvasHint">여기에 편하게 그려 주세요<span>왼쪽 버튼으로 그리기 · 버튼을 떼면 한 획 끝</span></div></div>
+        <div class="canvas-meta"><span id="draftInfo">0획 · 0개 좌표</span><span>한 그림을 다 그린 뒤 Enter 또는 ‘기록하고 다음’</span></div>
+        <p id="sizeInstruction" class="note" aria-live="polite"></p>
+        <div id="captureWarning" class="warning" hidden></div>
+        <div class="actions"><button id="undoStroke" disabled>마지막 획 지우기</button><button id="clearDrawing" disabled>다시 그리기</button><button id="saveSample" class="primary" disabled>기록하고 다음 <span class="key">Enter</span></button></div>
+        <p id="message" role="status" aria-live="polite"></p>
+      </section>
+      <aside><section class="panel" aria-label="수집 현황">
+        <div><div class="total"><span>전체 진행</span><strong id="totalCount">0 / 50</strong></div><progress id="progress" value="0" max="50" aria-label="수집 진행률"></progress></div>
+        <nav id="glyphs" class="glyphs" aria-label="수집할 문양"></nav>
+        <div class="storage" id="storage"><strong id="storageTitle">보관 준비 중</strong><p id="storageDetail">같은 브라우저와 같은 파일에서 이어할 수 있습니다.</p><button id="exportButton" class="backup" disabled>JSON 파일 저장</button><p id="exportDetail">중간에도 저장할 수 있습니다.</p></div>
+      </section></aside>
+    </div>
+    <details><summary>그리는 방법과 저장되는 정보</summary><ul>
+      <li>가로선 → 세로선 → 원 → X → 하트 순서입니다. 오른쪽 목록에서 문양을 직접 고를 수도 있습니다.</li>
+      <li>X는 대각선 하나를 그린 뒤 버튼을 떼고, 반대 대각선을 그립니다. 두 획을 모두 그린 뒤 기록하세요.</li>
+      <li>그림을 따라 그리는 배경 도안은 없습니다. 평소처럼 그리고, 찌그러진 그림도 남겨 주세요. 잘못 클릭했을 때만 다시 그리세요.</li>
+      <li>좌표, 획 구분, 입력 시간, 그리기 영역 크기, 작성자 번호와 정답 문양을 저장합니다. 이미지나 인식 점수는 저장하지 않습니다.</li>
+      <li>브라우저 자동 보관은 파일 백업과 다릅니다. 브라우저 기록을 지우거나 HTML을 옮기기 전에 JSON을 저장하세요. 진행 중인 그림도 JSON에 포함됩니다.</li>
+      <li>JSON을 불러오면 별도의 보관본으로 이어합니다. 기존 수집은 지우지 않습니다. 완료 후 JSON 파일을 카톡으로 전달하세요. 공유 링크를 카톡에서 받았다면 PC Chrome·Edge 또는 Safari에서 여세요.</li>
+    </ul></details>
+  </section>
+  <p class="footer">좌표 수집 도구 v1.1 · 참격 X / 하트 유지 · 수집 좌표는 기기에만 보관됩니다. 브라우저 보관만으로 제출되지는 않습니다.</p>
+  <input id="importFile" type="file" accept=".json,application/json" hidden>
+  <noscript><p class="warning">JavaScript를 사용할 수 있는 브라우저에서 열어 주세요.</p></noscript>
+</main>
+<script>
+'use strict';
+// One offline file is the shareable source. No network requests or recognizer runs.
+const FORMAT = 'marginalia-gesture-dataset';
+const VERSION = 1;
+const PROTOCOL = 'five-glyphs-x-size-v2';
+const LEGACY_PROTOCOL = 'five-glyphs-x-v1';
+const GLYPHS = Object.freeze([
+  {id:'horizontal', symbol:'─', name:'가로선', skill:'취소선', patternId:'cancellation-line', hint:'가로로 한 획. 시작 방향은 편한 쪽으로 그리세요.'},
+  {id:'vertical', symbol:'│', name:'세로선', skill:'잉크 분출 (먹빛 파열)', patternId:'ink-eruption', hint:'세로로 한 획. 시작 방향은 편한 쪽으로 그리세요.'},
+  {id:'circle', symbol:'○', name:'원', skill:'시간의 원', patternId:'fire-circle', hint:'둥글게 한 바퀴. 시작 위치와 도는 방향은 자유입니다.'},
+  {id:'x', symbol:'X', name:'X', skill:'잉크 참격', patternId:'ink-slash', hint:'대각선 두 획을 교차하세요. 버튼을 떼고 두 번째 획을 그린 뒤 기록합니다.'},
+  {id:'heart', symbol:'♡', name:'하트', skill:'하트 여왕의 판결', patternId:'frost-triangle', hint:'윗부분이 오목하고 아래가 뾰족한 하트. 한 획으로 편하게 그리세요.'}
+]);
+const $ = id => document.getElementById(id);
+const copy = value => JSON.parse(JSON.stringify(value));
+const uid = () => globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+const iso = () => new Date().toISOString();
+const round = value => Math.round(value * 1000) / 1000;
+const countPoints = draft => draft?.strokes.reduce((total, stroke) => total + stroke.points.length, 0) || 0;
+let db, data = null, localKey = null, revision = 0, conflict = false, busy = true;
+let activePointer = null, activeStroke = null, strokeClock = 0, strokeTimeOffset = 0;
+let saveQueue = Promise.resolve(), savePending = 0, draftSaveTimer = null, lastExport = null;
+let canvasWidth = 1, canvasHeight = 1;
+const canvas = $('drawing');
+const context = canvas.getContext('2d');
+
+function contentSignature() {
+  const snapshot = copy(data);
+  delete snapshot.session.updatedAt;
+  return JSON.stringify(snapshot);
+}
+
+function notify(message, isError = false) {
+  $('message').textContent = message;
+  $('message').classList.toggle('error', isError);
+}
+function storageStatus(title, detail, isError = false) {
+  $('storageTitle').textContent = title;
+  $('storageDetail').textContent = detail;
+  $('storage').classList.toggle('error', isError);
+}
+function counts() {
+  return Object.fromEntries(GLYPHS.map(g => [g.id, data?.samples.filter(s => s.glyphId === g.id).length || 0]));
+}
+function glyph() { return GLYPHS.find(g => g.id === data.activeGlyphId); }
+function requestedSize() {
+  if (data.protocol.id !== PROTOCOL) return 'natural';
+  const target = data.session.targetPerGlyph, ordinal = counts()[data.activeGlyphId];
+  return ordinal < Math.ceil(target * .4) ? 'natural' : ordinal < Math.ceil(target * .4) + Math.floor(target * .3) ? 'small' : 'large';
+}
+function chooseNext(afterId) {
+  const tally = counts(), start = GLYPHS.findIndex(g => g.id === afterId);
+  if (tally[afterId] < data.session.targetPerGlyph) return afterId;
+  for (let offset = 1; offset <= GLYPHS.length; offset++) {
+    const next = GLYPHS[(start + offset) % GLYPHS.length];
+    if (tally[next.id] < data.session.targetPerGlyph) return next.id;
+  }
+  return afterId;
+}
+function render() {
+  $('workspace').hidden = !data;
+  if (!data) return;
+  const g = glyph(), tally = counts(), target = data.session.targetPerGlyph;
+  const completed = GLYPHS.every(item => tally[item.id] >= target);
+  $('sessionLabel').textContent = data.session.participantId;
+  $('sessionInfo').textContent = `· ${data.session.declaredInputDevice} · 문양당 ${target}개`;
+  $('symbol').textContent = g.symbol;
+  $('glyphTitle').textContent = `${g.name} · ${g.skill}`;
+  $('glyphInstruction').textContent = g.hint;
+  const sizeLabels = {natural:'편한 크기로 그려 주세요.',small:'이번에는 작게 그려 주세요. 모양을 알아볼 수 있을 정도면 됩니다.',large:'이번에는 크게 그려 주세요. 영역 밖으로 나가지 않게 그리세요.'};
+  $('sizeInstruction').textContent = '크기 안내: ' + sizeLabels[data.draft?.sizeInstruction || requestedSize()];
+  $('sampleOrdinal').textContent = `${String(GLYPHS.indexOf(g) + 1).padStart(2,'0')} / 05 · ${tally[g.id] >= target ? '추가 수집' : `${tally[g.id] + 1}번째 그림 / ${target}개`}`;
+  $('totalCount').textContent = `${data.samples.length} / ${target * GLYPHS.length}`;
+  $('progress').max = target * GLYPHS.length;
+  $('progress').value = GLYPHS.reduce((sum, item) => sum + Math.min(tally[item.id], target), 0);
+  $('completion').hidden = !completed;
+  $('glyphs').replaceChildren(...GLYPHS.map(item => {
+    const button = document.createElement('button');
+    button.className = `glyph${tally[item.id] >= target ? ' complete' : ''}`;
+    button.dataset.glyph = item.id;
+    button.setAttribute('aria-current', String(item.id === g.id));
+    button.setAttribute('aria-label', `${item.name}, ${tally[item.id]}개 기록, 목표 ${target}개`);
+    const symbol = document.createElement('b'); symbol.textContent = item.symbol; symbol.setAttribute('aria-hidden','true');
+    const name = document.createElement('span'); name.textContent = item.name;
+    const count = document.createElement('span'); count.className = 'count'; count.textContent = `${tally[item.id]}/${target}`;
+    button.append(symbol, name, count);
+    button.disabled = busy || conflict || activePointer !== null;
+    button.addEventListener('click', () => changeGlyph(item.id));
+    return button;
+  }));
+  renderDraft();
+  $('exportButton').disabled = busy || !data;
+  $('finishExport').disabled = busy;
+  $('sessions').disabled = busy || activePointer !== null;
+}
+function renderDraft() {
+  if (!data) return;
+  const draft = data.draft, points = countPoints(draft);
+  $('canvasHint').hidden = points > 0;
+  $('draftInfo').textContent = `${draft?.strokes.length || 0}획 · ${points}개 좌표${data.activeGlyphId === 'x' && draft?.strokes.length === 1 ? ' · 두 번째 획을 이어 그리세요' : ''}`;
+  for (const id of ['saveSample','clearDrawing','undoStroke']) $(id).disabled = !points || busy || conflict || activePointer !== null;
+  const warnings = [];
+  if (draft?.flags.includes('capture-interrupted')) warnings.push('입력이 중간에 멈췄습니다. 현재 그림을 확인하고 이어 그리거나 다시 그리세요.');
+  if (draft && !sameSize(draft.canvas)) warnings.push('창 크기가 바뀌었습니다. 좌표 보호를 위해 이어 그리기는 잠갔습니다. 현재 그림을 기록하거나 다시 그리세요.');
+  if (draft?.flags.includes('outside-canvas')) warnings.push('영역 밖으로 나간 좌표가 있습니다. 의도한 그림인지 확인하세요.');
+  $('captureWarning').hidden = !warnings.length;
+  $('captureWarning').textContent = warnings.join(' ');
+}
+
+// IndexedDB commits are serialized and revision checked to prevent two tabs overwriting each other.
+function openDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('marginalia-drawing-collector', 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore('sessions', {keyPath:'key'});
+      request.result.createObjectStore('settings');
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => reject(new Error('다른 탭을 닫고 다시 열어 주세요.'));
+  });
+}
+function readAll() {
+  if (!db) return Promise.resolve([]);
+  return new Promise((resolve, reject) => {
+    const request = db.transaction('sessions').objectStore('sessions').getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+function writeSnapshot(key, snapshot) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(['sessions','settings'], 'readwrite');
+    const store = transaction.objectStore('sessions');
+    let mismatch = false;
+    const request = store.get(key);
+    request.onsuccess = () => {
+      if ((request.result?.revision || 0) !== revision) { mismatch = true; transaction.abort(); return; }
+      store.put({key, revision:revision + 1, savedAt:iso(), data:snapshot});
+      transaction.objectStore('settings').put(key, 'lastSession');
+    };
+    transaction.oncomplete = () => resolve();
+    transaction.onabort = () => reject(new Error(mismatch ? 'revision-conflict' : transaction.error?.message || '브라우저 보관 실패'));
+    transaction.onerror = () => {}; // onabort carries the transaction failure.
+  });
+}
+function persist() {
+  if (!data) return Promise.resolve(false);
+  data.session.updatedAt = iso();
+  const snapshot = copy(data), key = localKey;
+  if (activePointer !== null && snapshot.draft && !snapshot.draft.flags.includes('capture-interrupted')) snapshot.draft.flags.push('capture-interrupted');
+  savePending++;
+  storageStatus('브라우저에 보관 중…', '기록이 끝나면 보관 시각이 표시됩니다.');
+  saveQueue = saveQueue.then(async () => {
+    try {
+      if (conflict) throw new Error('revision-conflict');
+      if (!db) throw new Error('브라우저 저장 공간을 사용할 수 없습니다.');
+      await writeSnapshot(key, snapshot);
+      revision++;
+      storageStatus(`브라우저 보관 완료 · ${new Date().toLocaleTimeString('ko-KR')}`, '파일 백업은 아래 JSON 파일 저장을 눌러 주세요.');
+      return true;
+    } catch (error) {
+      if (error.message === 'revision-conflict') {
+        conflict = true;
+        storageStatus('다른 탭과 충돌 · 편집 잠금', '현재 내용을 JSON으로 저장한 뒤 불러오세요. 다른 탭의 기록은 덮어쓰지 않았습니다.', true);
+      } else {
+        storageStatus('이 창에만 남아 있습니다', '자동 보관 실패. 창을 닫기 전에 반드시 JSON 파일을 저장하세요.', true);
+      }
+      return false;
+    } finally { savePending--; renderDraft(); }
+  });
+  return saveQueue;
+}
+function scheduleDraftSave() {
+  if (draftSaveTimer !== null) return;
+  draftSaveTimer = setTimeout(() => { draftSaveTimer = null; persist(); }, 400);
+}
+function flushDraftSave() {
+  clearTimeout(draftSaveTimer); draftSaveTimer = null;
+  return persist();
+}
+async function updateSessionList() {
+  const rows = await readAll();
+  rows.sort((a,b) => b.savedAt.localeCompare(a.savedAt));
+  if (data && !rows.some(row => row.key === localKey)) rows.unshift({key:localKey,data});
+  $('sessions').replaceChildren(...rows.map(row => {
+    const option = document.createElement('option');
+    option.value = row.key;
+    option.textContent = `${row.data.session.participantId} · ${new Date(row.data.session.createdAt).toLocaleString('ko-KR')} · ${row.data.samples.length}개`;
+    return option;
+  }));
+  $('sessions').value = localKey || '';
+}
+
+function resizeCanvas() {
+  const bounds = canvas.getBoundingClientRect();
+  if (!bounds.width || !bounds.height) return;
+  if (activePointer !== null && data?.draft && !sameSize(data.draft.canvas)) finishStroke(true);
+  canvasWidth = bounds.width; canvasHeight = bounds.height;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.max(1, Math.round(canvasWidth * dpr));
+  canvas.height = Math.max(1, Math.round(canvasHeight * dpr));
+  context.setTransform(dpr,0,0,dpr,0,0);
+  redraw(); renderDraft();
+}
+function sameSize(space) {
+  const bounds = canvas.getBoundingClientRect();
+  return Math.abs(bounds.width-space.width) < 1 && Math.abs(bounds.height-space.height) < 1;
+}
+function redraw() {
+  context.clearRect(0,0,canvasWidth,canvasHeight);
+  if (!data?.draft) return;
+  const draft = data.draft;
+  context.save();
+  context.scale(canvasWidth / draft.canvas.width, canvasHeight / draft.canvas.height);
+  context.strokeStyle = '#392d50'; context.fillStyle = '#392d50'; context.lineWidth = 3; context.lineCap = 'round'; context.lineJoin = 'round';
+  for (const stroke of draft.strokes) {
+    if (!stroke.points.length) continue;
+    const first = stroke.points[0];
+    if (stroke.points.length === 1) { context.beginPath(); context.arc(first.x,first.y,1.5,0,Math.PI*2); context.fill(); }
+    else { context.beginPath(); context.moveTo(first.x,first.y); for (const p of stroke.points.slice(1)) context.lineTo(p.x,p.y); context.stroke(); }
+  }
+  context.restore();
+}
+function addPoint(event) {
+  if (!activeStroke) return;
+  const bounds = canvas.getBoundingClientRect();
+  const last = activeStroke.points.at(-1);
+  const point = {x:round(event.clientX-bounds.left), y:round(event.clientY-bounds.top), t:round(Math.max(last?.t || 0, strokeTimeOffset + event.timeStamp-strokeClock))};
+  // Identical events add no path information; no spatial resampling or shape smoothing is performed.
+  if (last && point.x === last.x && point.y === last.y && point.t === last.t) return;
+  activeStroke.points.push(point);
+  if (point.x < 0 || point.y < 0 || point.x > data.draft.canvas.width || point.y > data.draft.canvas.height) {
+    if (!data.draft.flags.includes('outside-canvas')) data.draft.flags.push('outside-canvas');
+  }
+}
+function startStroke(event) {
+  if (!data || busy || conflict || activePointer !== null || event.button !== 0 || !event.isPrimary) return;
+  if (data.draft && !sameSize(data.draft.canvas)) { renderDraft(); return; }
+  event.preventDefault(); canvas.focus({preventScroll:true});
+  if (!data.draft) {
+    const bounds = canvas.getBoundingClientRect();
+    data.draft = {id:uid(), glyphId:data.activeGlyphId, sizeInstruction:requestedSize(), startedAt:iso(), canvas:{width:round(bounds.width),height:round(bounds.height),devicePixelRatio:window.devicePixelRatio || 1}, strokes:[], flags:[]};
+  }
+  activePointer = event.pointerId;
+  strokeClock = event.timeStamp;
+  strokeTimeOffset = Math.max(0, Date.now()-Date.parse(data.draft.startedAt), data.draft.strokes.at(-1)?.points.at(-1)?.t || 0);
+  activeStroke = {id:data.draft.strokes.length+1, pointerType:event.pointerType || 'unknown', points:[]};
+  data.draft.strokes.push(activeStroke);
+  canvas.setPointerCapture(event.pointerId);
+  addPoint(event); redraw(); renderDraft(); scheduleDraftSave();
+}
+function moveStroke(event) {
+  if (event.pointerId !== activePointer) return;
+  event.preventDefault();
+  if (!sameSize(data.draft.canvas)) { finishStroke(true); return; }
+  if (event.pointerType === 'mouse' && !(event.buttons & 1)) { finishStroke(true); return; }
+  const events = event.getCoalescedEvents?.() || [];
+  for (const point of events.length ? events : [event]) addPoint(point);
+  redraw(); renderDraft(); scheduleDraftSave();
+}
+function finishStroke(interrupted = false) {
+  if (activePointer === null) return;
+  const pointer = activePointer; activePointer = null; activeStroke = null;
+  if (interrupted && !data.draft.flags.includes('capture-interrupted')) data.draft.flags.push('capture-interrupted');
+  if (canvas.hasPointerCapture(pointer)) canvas.releasePointerCapture(pointer);
+  redraw(); render(); flushDraftSave();
+}
+canvas.addEventListener('pointerdown', startStroke);
+canvas.addEventListener('pointermove', moveStroke);
+canvas.addEventListener('pointerup', event => { if (event.pointerId === activePointer) { addPoint(event); finishStroke(); } });
+canvas.addEventListener('pointercancel', event => { if (event.pointerId === activePointer) finishStroke(true); });
+canvas.addEventListener('lostpointercapture', event => { if (event.pointerId === activePointer) finishStroke(true); });
+canvas.addEventListener('contextmenu', event => event.preventDefault());
+window.addEventListener('blur', () => finishStroke(true));
+document.addEventListener('visibilitychange', () => { if (document.hidden) { finishStroke(true); if (data) flushDraftSave(); } });
+window.addEventListener('beforeunload', event => {
+  // Browsers may not wait for an asynchronous database transaction during shutdown.
+  if (savePending || activePointer !== null || draftSaveTimer !== null || (data && lastExport !== contentSignature())) {
+    event.preventDefault(); event.returnValue = '';
+  }
+});
+new ResizeObserver(resizeCanvas).observe(canvas);
+
+async function saveSample() {
+  if (!data?.draft || !countPoints(data.draft) || busy || conflict || activePointer !== null) return;
+  busy = true;
+  const draft = data.draft, g = glyph();
+  const sample = {...copy(draft), skillPatternId:g.patternId, glyphVersion:g.id === 'x' ? 'x-two-strokes-v1' : 'v1', recordedAt:iso(), durationMs:draft.strokes.at(-1).points.at(-1).t};
+  data.samples.push(sample);
+  data.draft = null;
+  data.activeGlyphId = chooseNext(g.id);
+  render(); redraw();
+  const saved = await flushDraftSave();
+  busy = false; render();
+  notify(`${g.name} ${counts()[g.id]}개 기록. ${saved ? '브라우저에 보관했습니다.' : 'JSON 파일을 저장해 주세요.'}`, !saved);
+  await updateSessionList();
+}
+async function changeGlyph(id) {
+  if (!data || busy || conflict || activePointer !== null || id === data.activeGlyphId) return;
+  if (data.draft) { notify('현재 그림을 기록하거나 ‘다시 그리기’를 누른 뒤 문양을 바꿔 주세요.', true); return; }
+  data.activeGlyphId = id;
+  render(); redraw(); await persist(); notify('선택한 문양을 그려 주세요.');
+}
+$('saveSample').addEventListener('click', saveSample);
+$('clearDrawing').addEventListener('click', async () => {
+  if (!data || busy || conflict || activePointer !== null) return;
+  data.draft = null; render(); redraw(); await flushDraftSave(); notify('현재 그림만 지웠습니다. 앞서 기록한 그림들은 그대로입니다.');
+});
+$('undoStroke').addEventListener('click', async () => {
+  if (!data?.draft || busy || conflict || activePointer !== null) return;
+  data.draft.strokes.pop(); if (!data.draft.strokes.length) data.draft = null;
+  render(); redraw(); await flushDraftSave(); notify('마지막 획을 지웠습니다.');
+});
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Enter' || event.repeat || event.isComposing || event.ctrlKey || event.altKey || event.metaKey) return;
+  if (['INPUT','SELECT','TEXTAREA','BUTTON','SUMMARY'].includes(document.activeElement.tagName) || !$('setup').hidden) return;
+  event.preventDefault(); saveSample();
+});
+
+async function activate(record) {
+  await saveQueue;
+  localKey = record.key; revision = record.revision; data = record.data; conflict = false; lastExport = null;
+  $('setup').hidden = true;
+  render(); resizeCanvas(); await updateSessionList();
+  storageStatus('기록을 불러왔습니다', '같은 파일에서 이어하고, 끝나면 JSON도 저장해 주세요.');
+  notify(data.draft ? '그리던 그림까지 복원했습니다. 이어 그리거나 기록하세요.' : '평소처럼 그려 주세요. 인식 결과에 맞춰 고칠 필요가 없습니다.');
+}
+async function preserveCurrent() {
+  if (!data) return true;
+  finishStroke(true);
+  const saved = await flushDraftSave();
+  if (saved || lastExport === contentSignature()) return true;
+  notify('현재 기록을 자동 보관하지 못했습니다. 먼저 JSON 파일을 저장한 뒤 다른 수집으로 이동하세요.', true);
+  return false;
+}
+$('setupForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (busy) return;
+  const participantId = $('participant').value.trim(), target = Number($('target').value);
+  const identity = /^([A-Za-z]+)([1-9][0-9]*)$/.exec(participantId);
+  if (!identity || participantId.length > 24 || !Number.isSafeInteger(Number(identity[2])) || !Number.isInteger(target) || target < 1 || target > 100) return;
+  busy = true; $('startButton').disabled = true;
+  const now = iso();
+  const fresh = {
+    format:FORMAT, schemaVersion:VERSION, collectorVersion:'1.1.0',
+    protocol:{id:PROTOCOL, schedule:'glyph-blocks', glyphOrder:GLYPHS.map(g=>g.id), coordinateSystem:{origin:'top-left',units:'css-px',yAxis:'down'}, timeUnit:'milliseconds-since-sample-start', preprocessing:'none', source:'standalone-browser', expectedStrokeCounts:{horizontal:1,vertical:1,circle:1,x:2,heart:1}},
+    session:{id:uid(),participantId,authorId:identity[1].toLowerCase(),attempt:Number(identity[2]),createdAt:now,updatedAt:now,targetPerGlyph:target,declaredInputDevice:$('device').value},
+    activeGlyphId:'horizontal', samples:[], draft:null
+  };
+  await activate({key:uid(),revision:0,data:fresh}); await persist();
+  busy = false; $('startButton').disabled = false; render(); await updateSessionList();
+});
+$('newButton').addEventListener('click', async () => {
+  if (busy) return;
+  busy = true;
+  const preserved = await preserveCurrent();
+  busy = false;
+  if (!preserved) return;
+  $('setup').hidden = false; $('cancelSetup').hidden = !data; $('setupError').textContent = '';
+  $('participant').focus(); $('setup').scrollIntoView({behavior:'smooth',block:'start'});
+});
+$('cancelSetup').addEventListener('click', () => { $('setup').hidden = true; });
+$('sessions').addEventListener('change', async () => {
+  if (busy) return;
+  busy = true; render();
+  const key = $('sessions').value;
+  if (!(await preserveCurrent())) { $('sessions').value = localKey; busy = false; render(); return; }
+  const record = (await readAll()).find(row => row.key === key);
+  if (record) {
+    await activate(record);
+    await persist();
+  }
+  busy = false; render();
+});
+
+function exportJson() {
+  if (!data || busy) return;
+  // Download within the user's click gesture (also needed by Safari).
+  // All points already exist in memory; database persistence is independent.
+  finishStroke(true); void flushDraftSave();
+  const payload = {...copy(data), exportedAt:iso()};
+  const fileName = `Marginalia_${data.session.participantId}_${new Date().toISOString().replace(/[:.]/g,'-')}_${data.samples.length}samples.json`;
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json;charset=utf-8'});
+  const link = document.createElement('a'), url = URL.createObjectURL(blob);
+  link.href = url; link.download = fileName; document.body.append(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  lastExport = contentSignature();
+  $('exportDetail').textContent = `다운로드 요청: ${fileName} · 다운로드 폴더에서 확인하세요.`;
+  notify(`${data.samples.length}개 그림${data.draft ? ' + 그리던 그림' : ''}이 담긴 JSON 다운로드를 요청했습니다.`);
+}
+$('exportButton').addEventListener('click', exportJson);
+$('finishExport').addEventListener('click', exportJson);
+$('importButton').addEventListener('click', () => { if (!busy) $('importFile').click(); });
+
+function validateDataset(value) {
+  const fail = message => { throw new Error(message); };
+  const finite = number => typeof number === 'number' && Number.isFinite(number);
+  const date = text => typeof text === 'string' && Number.isFinite(Date.parse(text));
+  if (!value || value.format !== FORMAT || value.schemaVersion !== VERSION || ![PROTOCOL,LEGACY_PROTOCOL].includes(value.protocol?.id)) fail('지원되는 문양 수집 JSON 파일이 아닙니다.');
+  const session = value.session;
+  if (!session || typeof session.id !== 'string' || !session.id || session.id.length > 100 || !/^[A-Za-z0-9_-]{1,24}$/.test(session.participantId)) fail('작성자 또는 수집 번호가 올바르지 않습니다.');
+  if (!Number.isInteger(session.targetPerGlyph) || session.targetPerGlyph < 1 || session.targetPerGlyph > 100 || !date(session.createdAt) || !date(session.updatedAt)) fail('수집 설정이 올바르지 않습니다.');
+  if (!['mouse','trackpad','pen','touch'].includes(session.declaredInputDevice)) fail('입력 도구 정보가 올바르지 않습니다.');
+  if (!GLYPHS.some(g=>g.id === value.activeGlyphId) || !Array.isArray(value.samples) || value.samples.length > 10000) fail('문양 목록이 올바르지 않습니다.');
+  if (value.protocol.coordinateSystem?.origin !== 'top-left' || value.protocol.coordinateSystem?.units !== 'css-px' || value.protocol.coordinateSystem?.yAxis !== 'down' || value.protocol.preprocessing !== 'none') fail('좌표 규약이 다른 파일입니다.');
+  const ids = new Set(); let pointCount = 0;
+  const checkDrawing = (drawing, isDraft) => {
+    const g = GLYPHS.find(item=>item.id === drawing?.glyphId);
+    if (!g || typeof drawing.id !== 'string' || !drawing.id || drawing.id.length > 100 || ids.has(drawing.id)) fail('그림 번호가 중복되거나 문양 이름이 잘못되었습니다.');
+    ids.add(drawing.id);
+    if (!date(drawing.startedAt) || !Array.isArray(drawing.flags) || drawing.flags.some(flag=>!['capture-interrupted','outside-canvas'].includes(flag))) fail('그림의 기록 정보가 올바르지 않습니다.');
+    if (!drawing.canvas || !['width','height','devicePixelRatio'].every(key=>finite(drawing.canvas[key]) && drawing.canvas[key] > 0 && drawing.canvas[key] <= 50000)) fail('그리기 영역 크기가 올바르지 않습니다.');
+    if (!Array.isArray(drawing.strokes) || !drawing.strokes.length || drawing.strokes.length > 1000) fail('획 데이터가 없습니다.');
+    let lastTime = -1;
+    drawing.strokes.forEach((stroke,index) => {
+      if (stroke.id !== index+1 || !['mouse','pen','touch','unknown'].includes(stroke.pointerType) || !Array.isArray(stroke.points) || !stroke.points.length) fail('획 번호 또는 좌표가 올바르지 않습니다.');
+      for (const point of stroke.points) {
+        if (!point || !finite(point.x) || !finite(point.y) || Math.abs(point.x)>100000 || Math.abs(point.y)>100000 || !finite(point.t) || point.t < 0 || point.t < lastTime) fail('좌표 또는 시간 순서가 올바르지 않습니다.');
+        lastTime = point.t; pointCount++;
+        if (pointCount > 1500000) fail('한 파일의 좌표 수가 너무 많습니다.');
+      }
+    });
+    if (!isDraft && (drawing.skillPatternId !== g.patternId || drawing.glyphVersion !== (g.id === 'x' ? 'x-two-strokes-v1' : 'v1') || !date(drawing.recordedAt) || drawing.durationMs !== lastTime)) fail('스킬 대응 또는 완료 시각이 올바르지 않습니다.');
+  };
+  value.samples.forEach(sample=>checkDrawing(sample,false));
+  if (value.draft !== null) { checkDrawing(value.draft,true); if (value.draft.glyphId !== value.activeGlyphId) fail('그리던 문양과 선택된 문양이 다릅니다.'); }
+  return value;
+}
+$('importFile').addEventListener('change', async event => {
+  const file = event.target.files[0]; event.target.value = '';
+  if (!file || busy) return;
+  busy = true; render();
+  try {
+    if (file.size > 64*1024*1024) throw new Error('64 MB 이하의 JSON 파일을 골라 주세요.');
+    const imported = validateDataset(JSON.parse(await file.text()));
+    if (!(await preserveCurrent())) return;
+    delete imported.exportedAt;
+    $('startupError').hidden = true;
+    await activate({key:uid(),revision:0,data:imported});
+    const saved = await persist();
+    notify(`${data.samples.length}개를 별도의 보관본으로 불러왔습니다. 기존 수집은 유지됩니다.${saved ? '' : ' 자동 보관은 불가능하니 JSON을 저장하세요.'}`, !saved);
+  } catch (error) {
+    const message = `불러오지 못했습니다: ${error.message} 기존 기록은 바꾸지 않았습니다.`;
+    notify(message,true); $('startupError').hidden = false; $('startupError').textContent = message;
+  } finally { busy = false; render(); await updateSessionList(); }
+});
+
+async function initialize() {
+  $('startButton').disabled = true;
+  try {
+    db = await openDatabase();
+    db.onversionchange = () => { db.close(); db = null; storageStatus('보관 연결이 닫혔습니다','JSON을 저장하고 이 페이지를 다시 열어 주세요.',true); };
+    const rows = await readAll();
+    const lastKey = await new Promise((resolve,reject) => {
+      const request = db.transaction('settings').objectStore('settings').get('lastSession');
+      request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+    });
+    const record = rows.find(row=>row.key === lastKey) || rows.sort((a,b)=>b.savedAt.localeCompare(a.savedAt))[0];
+    if (record) { validateDataset(record.data); await activate(record); }
+  } catch (error) {
+    $('startupError').hidden = false;
+    $('startupError').textContent = '자동 보관을 불러오지 못했습니다. Chrome 또는 Edge에서 여는 것을 권장합니다. 이 창에서 수집은 가능하지만, JSON을 자주 저장하세요.';
+    storageStatus('자동 보관 사용 불가','JSON 파일로 저장해 주세요.',true);
+  } finally { busy = false; $('startButton').disabled = false; render(); }
+}
+initialize();
+</script>
+</body>
+</html>
