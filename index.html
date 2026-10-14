@@ -58,6 +58,7 @@
         <p id="sizeInstruction" class="note" aria-live="polite"></p>
         <div id="captureWarning" class="warning" hidden></div>
         <div class="actions"><button id="undoStroke" disabled>마지막 획 지우기</button><button id="clearDrawing" disabled>다시 그리기</button><button id="saveSample" class="primary" disabled>기록하고 다음 <span class="key">Enter</span></button></div>
+        <div class="actions" style="margin-top:10px"><button id="undoSample" disabled aria-describedby="undoSampleDetail">직전 등록 취소</button><span id="undoSampleDetail" class="note">아직 등록한 그림이 없습니다.</span></div>
         <p id="message" role="status" aria-live="polite"></p>
       </section>
       <aside><section class="panel" aria-label="수집 현황">
@@ -70,12 +71,13 @@
       <li>가로선 → 세로선 → 원 → X → 하트 순서입니다. 오른쪽 목록에서 문양을 직접 고를 수도 있습니다.</li>
       <li>X는 대각선 하나를 그린 뒤 버튼을 떼고, 반대 대각선을 그립니다. 두 획을 모두 그린 뒤 기록하세요.</li>
       <li>그림을 따라 그리는 배경 도안은 없습니다. 평소처럼 그리고, 찌그러진 그림도 남겨 주세요. 잘못 클릭했을 때만 다시 그리세요.</li>
+      <li>잘못 등록했다면 ‘직전 등록 취소’로 마지막 그림을 편집 상태로 되돌릴 수 있습니다. 다음 그림을 그리고 있다면 먼저 기록하거나 ‘다시 그리기’로 비워 주세요. 이미 받은 JSON 파일은 바뀌지 않으므로 수정 후 새로 내려받은 최종 파일만 보내 주세요.</li>
       <li>좌표, 획 구분, 입력 시간, 그리기 영역 크기, 작성자 번호와 정답 문양을 저장합니다. 이미지나 인식 점수는 저장하지 않습니다.</li>
       <li>브라우저 자동 보관은 파일 백업과 다릅니다. 브라우저 기록을 지우거나 HTML을 옮기기 전에 JSON을 저장하세요. 진행 중인 그림도 JSON에 포함됩니다.</li>
       <li>JSON을 불러오면 별도의 보관본으로 이어합니다. 기존 수집은 지우지 않습니다. 완료 후 JSON 파일을 카톡으로 전달하세요. 공유 링크를 카톡에서 받았다면 PC Chrome·Edge 또는 Safari에서 여세요.</li>
     </ul></details>
   </section>
-  <p class="footer">좌표 수집 도구 v1.1 · 참격 X / 하트 유지 · 수집 좌표는 기기에만 보관됩니다. 브라우저 보관만으로 제출되지는 않습니다.</p>
+  <p class="footer">좌표 수집 도구 v1.2 · 참격 X / 하트 유지 · 수집 좌표는 기기에만 보관됩니다. 브라우저 보관만으로 제출되지는 않습니다.</p>
   <input id="importFile" type="file" accept=".json,application/json" hidden>
   <noscript><p class="warning">JavaScript를 사용할 수 있는 브라우저에서 열어 주세요.</p></noscript>
 </main>
@@ -181,6 +183,11 @@ function renderDraft() {
   $('canvasHint').hidden = points > 0;
   $('draftInfo').textContent = `${draft?.strokes.length || 0}획 · ${points}개 좌표${data.activeGlyphId === 'x' && draft?.strokes.length === 1 ? ' · 두 번째 획을 이어 그리세요' : ''}`;
   for (const id of ['saveSample','clearDrawing','undoStroke']) $(id).disabled = !points || busy || conflict || activePointer !== null;
+  const lastSample = data.samples.at(-1);
+  $('undoSample').disabled = !lastSample || !!draft || busy || conflict || activePointer !== null;
+  $('undoSampleDetail').textContent = !lastSample ? '아직 등록한 그림이 없습니다.'
+    : draft ? '현재 그림을 기록하거나 ‘다시 그리기’로 비운 뒤 취소할 수 있습니다.'
+    : `직전 등록: ${GLYPHS.find(item => item.id === lastSample.glyphId).name} #${counts()[lastSample.glyphId]} · 취소하면 그 그림을 고칠 수 있습니다.`;
   const warnings = [];
   if (draft?.flags.includes('capture-interrupted')) warnings.push('입력이 중간에 멈췄습니다. 현재 그림을 확인하고 이어 그리거나 다시 그리세요.');
   if (draft && !sameSize(draft.canvas)) warnings.push('창 크기가 바뀌었습니다. 좌표 보호를 위해 이어 그리기는 잠갔습니다. 현재 그림을 기록하거나 다시 그리세요.');
@@ -384,7 +391,24 @@ async function changeGlyph(id) {
   data.activeGlyphId = id;
   render(); redraw(); await persist(); notify('선택한 문양을 그려 주세요.');
 }
+async function undoLastSample() {
+  if (!data?.samples.length || data.draft || busy || conflict || activePointer !== null) return;
+  busy = true;
+  const sample = data.samples.pop(), g = GLYPHS.find(item => item.id === sample.glyphId);
+  const draft = copy(sample);
+  // A corrected submission must not reuse the immutable ID from an older JSON export.
+  draft.id = uid();
+  for (const key of ['skillPatternId','glyphVersion','recordedAt','durationMs']) delete draft[key];
+  data.draft = draft;
+  data.activeGlyphId = sample.glyphId;
+  render(); redraw();
+  const saved = await flushDraftSave();
+  busy = false; render();
+  notify(`${g.name}의 직전 등록을 취소하고 그림을 복원했습니다. 고치거나 ‘다시 그리기’로 새로 그리세요. ${saved ? '취소 상태도 브라우저에 보관했습니다.' : '자동 보관에 실패했으니 JSON을 저장하세요.'} 이미 받은 JSON은 바뀌지 않으니 최종 파일을 다시 내려받아 주세요.`, !saved);
+  await updateSessionList();
+}
 $('saveSample').addEventListener('click', saveSample);
+$('undoSample').addEventListener('click', undoLastSample);
 $('clearDrawing').addEventListener('click', async () => {
   if (!data || busy || conflict || activePointer !== null) return;
   data.draft = null; render(); redraw(); await flushDraftSave(); notify('현재 그림만 지웠습니다. 앞서 기록한 그림들은 그대로입니다.');
@@ -425,7 +449,7 @@ $('setupForm').addEventListener('submit', async event => {
   busy = true; $('startButton').disabled = true;
   const now = iso();
   const fresh = {
-    format:FORMAT, schemaVersion:VERSION, collectorVersion:'1.1.0',
+    format:FORMAT, schemaVersion:VERSION, collectorVersion:'1.2.0',
     protocol:{id:PROTOCOL, schedule:'glyph-blocks', glyphOrder:GLYPHS.map(g=>g.id), coordinateSystem:{origin:'top-left',units:'css-px',yAxis:'down'}, timeUnit:'milliseconds-since-sample-start', preprocessing:'none', source:'standalone-browser', expectedStrokeCounts:{horizontal:1,vertical:1,circle:1,x:2,heart:1}},
     session:{id:uid(),participantId,authorId:identity[1].toLowerCase(),attempt:Number(identity[2]),createdAt:now,updatedAt:now,targetPerGlyph:target,declaredInputDevice:$('device').value},
     activeGlyphId:'horizontal', samples:[], draft:null
