@@ -166,17 +166,19 @@ if (TIME_STOP) {
 }
 
 if (NEXT_SKILLS) {
+  const defaultPerGlyph = 100;
+  const defaultTotal = defaultPerGlyph * GLYPHS.length;
   document.body.classList.add('next-skills');
   document.title = '마지날리아 · 새 스킬 네 문양 수집';
   $('pageTitle').textContent = '새 스킬 네 문양 그리기';
   $('setupTitle').textContent = '다이아몬드 · 소괄호 · 책갈피 · 모래시계';
-  $('target').value = '5';
-  $('setupNote').textContent = '기본은 문양당 5개, 총 20개입니다. 각 문양을 평소 크기로 2번, 작게 1번, 크게 2번 그려 주세요. 마지막에 JSON을 내려받아 팀에 전달해 주세요.';
+  $('target').value = defaultPerGlyph;
+  $('setupNote').textContent = `기본은 문양당 ${defaultPerGlyph}개, 총 ${defaultTotal}개입니다. 화면 안내에 따라 평소 크기, 작은 크기, 큰 크기로 그려 주세요. JSON은 중간에도 내려받을 수 있습니다.`;
   $('glyphOrderHelp').textContent = '다이아몬드 → 소괄호 → 책갈피 → 모래시계 순서로 그립니다. 오른쪽 목록에서 문양을 직접 고를 수도 있습니다.';
   $('strokeHelp').textContent = '그림 옆의 예시를 보고 평소 손놀림대로 그려 주세요. 획 수, 시작점과 그리는 방향은 자유입니다. 한 문양을 완성하면 기록하세요.';
   $('footer').textContent = '새 스킬 네 문양 수집 · 원본 좌표 자동 보관 · JSON 다운로드';
-  $('totalCount').textContent = '0 / 20';
-  $('progress').max = 20;
+  $('totalCount').textContent = `0 / ${defaultTotal}`;
+  $('progress').max = defaultTotal;
 }
 
 document.querySelectorAll('[data-time-glyph]').forEach(button => button.addEventListener('click', async () => {
