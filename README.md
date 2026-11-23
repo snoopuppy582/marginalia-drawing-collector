@@ -4,7 +4,9 @@
 
 공유 주소: https://snoopuppy582.github.io/marginalia-drawing-collector/
 
-배포 저장소는 `snoopuppy582/marginalia-drawing-collector`이며 이 폴더의 `index.html`, `README.md`와 빈 `.nojekyll`만 공개한다. 게임 저장소와 작성자의 JSON은 업로드하지 않는다. 원본은 이 폴더에서 관리하고 배포 복사본에서 별도로 수정하지 않는다.
+[새 스킬 네 문양 수집기](https://snoopuppy582.github.io/marginalia-drawing-collector/next-skills/)에서 다이아몬드, 소괄호, 책갈피, 모래시계를 각각 5개씩 그린 뒤 JSON을 내려받을 수 있다.
+
+배포 저장소는 `snoopuppy582/marginalia-drawing-collector`이며 기존 수집기와 새 문양 수집기를 별도 경로에 공개한다. 게임 저장소와 작성자의 JSON은 업로드하지 않는다. 원본은 이 폴더에서 관리하고 배포 복사본에서 별도로 수정하지 않는다.
 
 ## 사용
 
